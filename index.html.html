@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>見積比較・説明文作成ツール｜ViVi不動産</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --navy:#1b2a4a;
+  --navy-deep:#11203b;
+  --orange:#f08a24;
+  --orange-soft:#fef0df;
+  --up:#c0392b;
+  --up-soft:#fdecea;
+  --down:#1d7a4d;
+  --down-soft:#e8f5ee;
+  --removed:#8a8a8a;
+  --removed-soft:#f0f0f0;
+  --added:#2766c4;
+  --added-soft:#e9f1fb;
+  --ink:#222;
+  --ink-soft:#5a6473;
+  --line:#dfe3ea;
+  --bg:#f5f6f8;
+  --card:#ffffff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+  background:var(--bg);color:var(--ink);line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+header{
+  background:var(--navy);color:#fff;padding:18px 24px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  border-bottom:4px solid var(--orange);
+}
+header .logo{font-size:21px;font-weight:800;letter-spacing:.04em}
+header .logo span{color:var(--orange)}
+header .sub{font-size:13px;color:#b9c2d4;font-weight:500}
+.wrap{max-width:1180px;margin:0 auto;padding:24px}
+
+/* ステップ */
+.steps{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+.step{
+  flex:1;min-width:160px;background:var(--card);border:1px solid var(--line);
+  border-radius:10px;padding:14px 16px;display:flex;gap:12px;align-items:center;
+}
+.step .num{
+  width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;
+}
+.step.done .num{background:var(--down)}
+.step .t{font-size:13px;font-weight:600;color:var(--ink-soft)}
+
+/* アップロード */
+.upload-zone{display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.drop{
+  flex:1;min-width:280px;background:var(--card);border:2px dashed var(--line);
+  border-radius:12px;padding:26px 20px;text-align:center;cursor:pointer;
+  transition:.2s;
+}
+.drop:hover{border-color:var(--orange);background:var(--orange-soft)}
+.drop.loaded{border-style:solid;border-color:var(--down);background:var(--down-soft)}
+.drop .icon{font-size:30px;margin-bottom:6px}
+.drop .label{font-weight:700;font-size:15px;margin-bottom:3px}
+.drop .hint{font-size:12px;color:var(--ink-soft)}
+.drop .fname{font-size:13px;color:var(--down);font-weight:600;margin-top:8px;word-break:break-all}
+.drop.old .tag{color:var(--ink-soft)}
+.drop.new .tag{color:var(--orange)}
+.drop .tag{font-size:11px;font-weight:700;letter-spacing:.08em;display:block;margin-bottom:6px}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.btn{
+  border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:.15s;
+}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-primary:hover{background:#d9771a}
+.btn-primary:disabled{background:#d8c5b0;cursor:not-allowed}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-navy:hover{background:var(--navy-deep)}
+.btn-ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.btn-ghost:hover{border-color:var(--navy)}
+.btn-sm{padding:7px 13px;font-size:12.5px}
+
+.notice{
+  background:#fff;border:1px solid var(--line);border-left:4px solid var(--orange);
+  border-radius:8px;padding:12px 16px;font-size:13px;color:var(--ink-soft);margin-bottom:18px;
+}
+
+/* サマリー */
+.summary{
+  background:var(--navy);color:#fff;border-radius:12px;padding:20px 24px;margin-bottom:20px;
+  display:none;
+}
+.summary.show{display:block}
+.summary h2{font-size:15px;font-weight:600;color:#b9c2d4;margin-bottom:12px}
+.summary .totals{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end}
+.summary .tot{display:flex;flex-direction:column}
+.summary .tot .cap{font-size:12px;color:#9aa6bd}
+.summary .tot .val{font-size:23px;font-weight:800;letter-spacing:.01em}
+.summary .arrow{font-size:22px;color:var(--orange);align-self:center}
+.summary .diff{
+  margin-left:auto;text-align:right;background:rgba(255,255,255,.08);
+  border-radius:10px;padding:10px 18px;
+}
+.summary .diff .cap{font-size:12px;color:#9aa6bd}
+.summary .diff .val{font-size:24px;font-weight:800}
+.summary .diff.up .val{color:#ff9d8e}
+.summary .diff.down .val{color:#7fe0aa}
+
+/* 凡例 */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:12.5px}
+.legend span{display:flex;align-items:center;gap:5px;color:var(--ink-soft)}
+.legend i{width:13px;height:13px;border-radius:3px;display:inline-block}
+.lg-up{background:var(--up)}.lg-down{background:var(--down)}
+.lg-removed{background:var(--removed)}.lg-added{background:var(--added)}
+
+/* 差分カード */
+.diff-list{display:flex;flex-direction:column;gap:14px;margin-bottom:24px}
+.dcard{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  overflow:hidden;border-left:5px solid var(--line);
+}
+.dcard.up{border-left-color:var(--up)}
+.dcard.down{border-left-color:var(--down)}
+.dcard.removed{border-left-color:var(--removed)}
+.dcard.added{border-left-color:var(--added)}
+.dcard.same{display:none}
+.dcard-head{
+  padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;cursor:pointer;
+}
+.dcard-head .name{font-size:16px;font-weight:700}
+.badge{
+  font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.03em;
+}
+.badge.up{background:var(--up-soft);color:var(--up)}
+.badge.down{background:var(--down-soft);color:var(--down)}
+.badge.removed{background:var(--removed-soft);color:#666}
+.badge.added{background:var(--added-soft);color:var(--added)}
+.dcard-head .money{margin-left:auto;text-align:right;font-size:13px;color:var(--ink-soft)}
+.dcard-head .money b{font-size:17px;color:var(--ink);display:block}
+.dcard-head .delta{font-weight:800;font-size:15px}
+.delta.up{color:var(--up)}.delta.down{color:var(--down)}
+.toggle{color:var(--ink-soft);font-size:12px;transition:.2s}
+.dcard.open .toggle{transform:rotate(180deg)}
+
+.dcard-body{display:none;padding:0 18px 18px;border-top:1px solid var(--line)}
+.dcard.open .dcard-body{display:block}
+.explain{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0;
+}
+@media(max-width:720px){.explain{grid-template-columns:1fr}}
+.exp-box{border:1px solid var(--line);border-radius:9px;padding:13px 15px}
+.exp-box.cust{background:var(--orange-soft);border-color:#f3d3a8}
+.exp-box.sales{background:#eef1f6;border-color:#d3dbe8}
+.exp-box .eh{font-size:11px;font-weight:800;letter-spacing:.08em;margin-bottom:6px}
+.exp-box.cust .eh{color:#c2710f}
+.exp-box.sales .eh{color:var(--navy)}
+.exp-box .et{font-size:13.5px;color:var(--ink);white-space:pre-wrap}
+
+.detail-changes{font-size:12.5px;color:var(--ink-soft);margin-bottom:12px}
+.detail-changes .dc-row{padding:3px 0;border-bottom:1px dashed var(--line)}
+.detail-changes .dc-row:last-child{border:none}
+
+/* コメント */
+.cmt-area{margin-top:12px}
+.cmt-area .clabel{font-size:11px;font-weight:800;color:var(--navy);letter-spacing:.06em;margin-bottom:5px}
+.cmt-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.cmt{background:#fff;border:1px solid var(--line);border-radius:7px;padding:8px 11px;font-size:13px;display:flex;gap:8px;align-items:flex-start}
+.cmt .who{font-weight:700;color:var(--navy);flex-shrink:0;font-size:12px}
+.cmt .txt{flex:1}
+.cmt .del{color:#bbb;cursor:pointer;font-size:12px;flex-shrink:0}
+.cmt .del:hover{color:var(--up)}
+.cmt-input{display:flex;gap:8px;flex-wrap:wrap}
+.cmt-input input{
+  flex:1;min-width:180px;border:1px solid var(--line);border-radius:7px;
+  padding:8px 11px;font-size:13px;font-family:inherit;
+}
+.cmt-input input:focus{outline:none;border-color:var(--orange)}
+.cmt-input .who-in{flex:0 0 100px;min-width:80px}
+
+/* 保存済み */
+.saved-panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:20px;display:none}
+.saved-panel.show{display:block}
+.saved-panel h3{font-size:14px;color:var(--navy);margin-bottom:12px}
+.saved-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.saved-item:last-child{border:none}
+.saved-item .si-name{font-weight:700;font-size:14px}
+.saved-item .si-meta{font-size:12px;color:var(--ink-soft)}
+.saved-item .si-actions{margin-left:auto;display:flex;gap:6px}
+
+.export-bar{display:none;gap:10px;flex-wrap:wrap;margin-bottom:24px;padding:16px 18px;background:var(--card);border:1px solid var(--line);border-radius:12px;align-items:center}
+.export-bar.show{display:flex}
+.export-bar .eb-label{font-weight:700;font-size:14px;color:var(--navy);margin-right:8px}
+
+footer{text-align:center;padding:24px;color:var(--ink-soft);font-size:12px}
+
+.modal-bg{position:fixed;inset:0;background:rgba(17,32,59,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:100}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:480px;width:100%;padding:24px}
+.modal h3{font-size:17px;color:var(--navy);margin-bottom:14px}
+.modal input{width:100%;border:1px solid var(--line);border-radius:8px;padding:11px;font-size:14px;font-family:inherit;margin-bottom:14px}
+.modal .m-actions{display:flex;gap:10px;justify-content:flex-end}
+
+.empty{text-align:center;padding:50px 20px;color:var(--ink-soft)}
+.empty .ic{font-size:46px;margin-bottom:10px;opacity:.5}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Vi<span>Vi</span> 不動産</div>
+  <div class="sub">見積比較・説明文作成ツール</div>
+</header>
+
+<div class="wrap">
+
+  <div class="steps">
+    <div class="step" id="step1"><div class="num">1</div><div class="t">2つの見積PDFを読込</div></div>
+    <div class="step" id="step2"><div class="num">2</div><div class="t">変更点を自動で比較</div></div>
+    <div class="step" id="step3"><div class="num">3</div><div class="t">説明文・コメントを確認</div></div>
+    <div class="step" id="step4"><div class="num">4</div><div class="t">保存・営業へ共有</div></div>
+  </div>
+
+  <div class="notice">
+    旧見積（前回お渡し）と新見積（再見積）のPDFを読み込むと、工事項目ごとに「増額・減額・削除・追加」を自動で判定し、お客様用・営業用の説明文をそれぞれ作成します。各項目にコメントを残せます。
+  </div>
+
+  <div class="upload-zone">
+    <label class="drop old" id="dropOld">
+      <input type="file" accept="application/pdf" hidden id="fileOld">
+      <span class="tag">① 旧見積（前回お渡し）</span>
+      <div class="icon">📄</div>
+      <div class="label">前回の見積PDFを選択</div>
+      <div class="hint">クリック または ドラッグ＆ドロップ</div>
+      <div class="fname" id="fnameOld"></div>
+    </label>
+    <label class="drop new" id="dropNew">
+      <input type="file" accept="application/pdf" hidden id="fileNew">
+      <span class="tag">② 新見積（再見積）</span>
+      <div class="icon">📄</div>
+      <div class="label">新しい見積PDFを選択</div>
+      <div class="hint">クリック または ドラッグ＆ドロップ</div>
+      <div class="fname" id="fnameNew"></div>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="btnCompare" disabled>変更点を比較する</button>
+    <button class="btn btn-ghost" id="btnDemo">サンプル（堀江様邸）で試す</button>
+    <button class="btn btn-ghost" id="btnImport">共有ファイルを読込</button>
+    <input type="file" accept=".json" hidden id="fileImport">
+    <button class="btn btn-ghost" id="btnShowSaved">保存済みを見る</button>
+  </div>
+
+  <div class="saved-panel" id="savedPanel">
+    <h3>保存済みの比較</h3>
+    <div id="savedList"></div>
+  </div>
+
+  <!-- 結果 -->
+  <div id="result">
+    <div class="empty" id="emptyState">
+      <div class="ic">📊</div>
+      <div>2つの見積PDFを読み込んで「変更点を比較する」を押してください。</div>
+      <div style="font-size:12.5px;margin-top:6px">まず動きを見たい場合は「サンプルで試す」からどうぞ。</div>
+    </div>
+
+    <div class="summary" id="summary">
+      <h2 id="summaryTitle">堀江様邸 リノベーション工事御見積</h2>
+      <div class="totals">
+        <div class="tot"><span class="cap">旧見積（税込）</span><span class="val" id="totOld">-</span></div>
+        <div class="arrow">→</div>
+        <div class="tot"><span class="cap">新見積（税込）</span><span class="val" id="totNew">-</span></div>
+        <div class="diff" id="diffBox">
+          <span class="cap">差額</span><span class="val" id="diffVal">-</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend" id="legend" style="display:none">
+      <span><i class="lg-up"></i>増額</span>
+      <span><i class="lg-down"></i>減額</span>
+      <span><i class="lg-removed"></i>取りやめ（削除）</span>
+      <span><i class="lg-added"></i>新規追加</span>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="export-bar" id="exportBar">
+      <span class="eb-label">この比較を：</span>
+      <button class="btn btn-navy btn-sm" id="btnSave">名前を付けて保存</button>
+      <button class="btn btn-ghost btn-sm" id="btnExportJson">営業共有用ファイルで出力</button>
+      <button class="btn btn-ghost btn-sm" id="btnExportPdf">お客様用PDFで出力</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="saveModal">
+  <div class="modal">
+    <h3>名前を付けて保存</h3>
+    <input type="text" id="saveName" placeholder="例：堀江様邸 6/19再見積">
+    <div class="m-actions">
+      <button class="btn btn-ghost btn-sm" id="saveCancel">キャンセル</button>
+      <button class="btn btn-primary btn-sm" id="saveOk">保存する</button>
+    </div>
+  </div>
+</div>
+
+<footer>ViVi不動産株式会社｜見積比較・説明文作成ツール</footer>
+
+<script>
+/* ============ 状態 ============ */
+let oldText="", newText="", oldFileName="", newFileName="";
+let currentDiff=null; // {title, totOld, totNew, items:[...]}
+
+function ensurePdfWorker(){
+  if(window.pdfjsLib && !pdfjsLib.GlobalWorkerOptions.workerSrc){
+    pdfjsLib.GlobalWorkerOptions.workerSrc=
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+}
+
+/* ============ PDF読込 ============ */
+async function extractPdf(file){
+  if(!window.pdfjsLib){
+    throw new Error("PDF読込ライブラリが読み込めませんでした。ネット接続をご確認ください。");
+  }
+  ensurePdfWorker();
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  let all="";
+  for(let p=1;p<=pdf.numPages;p++){
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    // y座標で行をまとめる
+    const rows={};
+    tc.items.forEach(it=>{
+      const y=Math.round(it.transform[5]);
+      (rows[y]=rows[y]||[]).push({x:it.transform[4],s:it.str});
+    });
+    Object.keys(rows).map(Number).sort((a,b)=>b-a).forEach(y=>{
+      const line=rows[y].sort((a,b)=>a.x-b.x).map(o=>o.s).join(" ");
+      all+=line+"\n";
+    });
+    all+="\n";
+  }
+  return all;
+}
+
+function setupDrop(dropId,fileId,fnameId,which){
+  const drop=document.getElementById(dropId);
+  const input=document.getElementById(fileId);
+  const fname=document.getElementById(fnameId);
+  input.addEventListener("change",async e=>{
+    if(!e.target.files[0])return;
+    await handleFile(e.target.files[0],which,drop,fname);
+  });
+  drop.addEventListener("dragover",e=>{e.preventDefault();drop.style.borderColor="var(--orange)"});
+  drop.addEventListener("dragleave",()=>{drop.style.borderColor=""});
+  drop.addEventListener("drop",async e=>{
+    e.preventDefault();drop.style.borderColor="";
+    const f=e.dataTransfer.files[0];
+    if(f&&f.type==="application/pdf")await handleFile(f,which,drop,fname);
+  });
+}
+async function handleFile(file,which,drop,fname){
+  fname.textContent="読込中…";
+  try{
+    const txt=await extractPdf(file);
+    if(which==="old"){oldText=txt;oldFileName=file.name;}
+    else{newText=txt;newFileName=file.name;}
+    drop.classList.add("loaded");
+    fname.textContent="✓ "+file.name;
+    checkReady();
+  }catch(err){
+    fname.textContent="読込に失敗しました。PDFを確認してください。";
+  }
+}
+function checkReady(){
+  const ready=oldText&&newText;
+  document.getElementById("btnCompare").disabled=!ready;
+  document.getElementById("step1").classList.toggle("done",!!ready);
+}
+setupDrop("dropOld","fileOld","fnameOld","old");
+setupDrop("dropNew","fileNew","fnameNew","new");
+
+/* ============ 見積パース ============ */
+// 総合計の行から税抜合計を拾い、各工事の概要行（名称＋金額）を抽出
+function parseEstimate(text){
+  const lines=text.split("\n").map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean);
+  const result={title:"",total:0,sections:{}};
+  // 工事名称
+  for(const l of lines){
+    const m=l.match(/工事名称.*?】?\s*(.+?リノベーション工事御見積)/);
+    if(m){result.title=m[1].trim();break;}
+  }
+  if(!result.title){
+    const m=text.match(/(\S+様邸\s*リノベーション工事御見積)/);
+    if(m)result.title=m[1].replace(/\s+/g,"");
+  }
+  // 総合計（内訳書1ページ目の集計表）の各行： 名称 1 式 金額
+  const known=["共通仮設工事","配管設備工事","電気工事","照明器具","解体工事","大工工事","建材","設備工事【エコキュート】","設備工事","内装工事","土間工事","諸経費"];
+  // 集計表らしき行を探す：工事名 + 1 + 式 + 数値
+  lines.forEach(l=>{
+    const mm=l.match(/^(?:[▲△\s]*)([\u3000-\u9fffA-Za-z【】・]+?工事(?:【エコキュート】)?|建材|照明器具|諸経費)\s+1\s+式\s+([\d,]+)/);
+    if(mm){
+      const name=mm[1].trim();
+      const amt=parseInt(mm[2].replace(/,/g,""),10);
+      if(known.includes(name)&&!result.sections[name]){
+        result.sections[name]=amt;
+      }
+    }
+  });
+  // 総合計
+  const tm=text.match(/総\s*合\s*計\s*[>＞]?\s*([\d,]{5,})/);
+  if(tm)result.total=parseInt(tm[1].replace(/,/g,""),10);
+  else{
+    // セクション合計で代用
+    result.total=Object.values(result.sections).reduce((a,b)=>a+b,0);
+  }
+  return result;
+}
+
+/* ============ 比較ロジック ============ */
+const SECTION_NOTE={
+  "共通仮設工事":"室内クリーニング・仮設トイレ・養生など、工事に共通して必要な仮設費用です。",
+  "配管設備工事":"給水・給湯・排水・ガスなどの配管に関する工事です。",
+  "電気工事":"配線・コンセント・スイッチ・照明取付などの電気工事です。",
+  "照明器具":"取り付ける照明器具本体の費用です。",
+  "解体工事":"既存の浴室・キッチン・内装などを撤去する工事です。",
+  "大工工事":"造作・下地・収納など、大工さんによる工事です。",
+  "建材":"建具・フローリング材・収納材などの資材費です。",
+  "設備工事":"システムバス・キッチン・洗面化粧台など住宅設備の費用です。",
+  "設備工事【エコキュート】":"エコキュート本体と設置に関する費用です。",
+  "内装工事":"クロス・床（CF）・タイルなどの内装仕上げ工事です。",
+  "土間工事":"土間コンクリートの打設など、基礎・土間まわりの工事です。",
+  "諸経費":"事務所経費・現場管理費などの諸経費です。"
+};
+
+function buildDiff(oldEst,newEst){
+  const names=new Set([...Object.keys(oldEst.sections),...Object.keys(newEst.sections)]);
+  // 表示順
+  const order=["共通仮設工事","配管設備工事","電気工事","照明器具","解体工事","大工工事","建材","設備工事","設備工事【エコキュート】","内装工事","土間工事","諸経費"];
+  const items=[];
+  [...names].sort((a,b)=>{
+    const ia=order.indexOf(a),ib=order.indexOf(b);
+    return (ia<0?99:ia)-(ib<0?99:ib);
+  }).forEach(name=>{
+    const o=oldEst.sections[name]??null;
+    const n=newEst.sections[name]??null;
+    let type,delta=0;
+    if(o===null&&n!==null){type="added";delta=n;}
+    else if(o!==null&&n===null){type="removed";delta=-o;}
+    else{
+      delta=n-o;
+      if(delta>0)type="up";
+      else if(delta<0)type="down";
+      else type="same";
+    }
+    items.push({name,old:o,new:n,type,delta,comments:[]});
+  });
+  return {
+    title:newEst.title||oldEst.title||"リノベーション工事御見積",
+    totOld:oldEst.total,totNew:newEst.total,
+    items
+  };
+}
+
+/* ============ 説明文生成 ============ */
+function yen(n){return (n<0?"−":"")+"¥"+Math.abs(n).toLocaleString();}
+function yenTax(n){return "¥"+Math.round(n*1.1).toLocaleString();}
+
+function genCustomer(item){
+  const note=SECTION_NOTE[item.name]||"";
+  const amt=Math.abs(item.delta).toLocaleString();
+  switch(item.type){
+    case "up":
+      return `「${item.name}」の内容を見直し、${amt}円ぶん追加となりました。${note}より良い仕上がりのための変更です。詳しい内容は担当よりご説明いたします。`;
+    case "down":
+      return `「${item.name}」を見直し、${amt}円お安くなりました。${note}ご負担が軽くなる変更です。`;
+    case "removed":
+      return `「${item.name}」は今回の工事から取りやめとなり、${amt}円ぶん減額しました。${note}`;
+    case "added":
+      return `「${item.name}」を新たに追加し、${amt}円となりました。${note}ご要望をふまえた追加項目です。`;
+    default:return `「${item.name}」は前回から変更ありません。`;
+  }
+}
+function genSales(item){
+  const o=item.old!==null?yen(item.old):"—（前回なし）";
+  const n=item.new!==null?yen(item.new):"—（今回なし）";
+  let head;
+  switch(item.type){
+    case "up":head=`【増額 ${yen(item.delta)}】`;break;
+    case "down":head=`【減額 ${yen(item.delta)}】`;break;
+    case "removed":head=`【削除 ${yen(item.delta)}】`;break;
+    case "added":head=`【追加 ${yen(item.delta)}】`;break;
+    default:head="【変更なし】";break;
+  }
+  return `${head}\n旧：${o} → 新：${n}\n※お客様への説明必須。減額・削除は「何を止めたか」、増額・追加は「なぜ必要か」を必ず口頭で補足すること。`;
+}
+
+/* ============ 描画 ============ */
+function render(diff){
+  currentDiff=diff;
+  document.getElementById("emptyState").style.display="none";
+  document.getElementById("summary").classList.add("show");
+  document.getElementById("legend").style.display="flex";
+  document.getElementById("exportBar").classList.add("show");
+  ["step1","step2","step3","step4"].forEach(s=>document.getElementById(s).classList.add("done"));
+
+  document.getElementById("summaryTitle").textContent=diff.title;
+  document.getElementById("totOld").textContent=yenTax(diff.totOld);
+  document.getElementById("totNew").textContent=yenTax(diff.totNew);
+  const d=Math.round(diff.totNew*1.1)-Math.round(diff.totOld*1.1);
+  const db=document.getElementById("diffBox");
+  db.className="diff "+(d>=0?"up":"down");
+  document.getElementById("diffVal").textContent=(d>=0?"+":"−")+"¥"+Math.abs(d).toLocaleString();
+
+  const list=document.getElementById("diffList");
+  list.innerHTML="";
+  diff.items.forEach((item,idx)=>{
+    const card=document.createElement("div");
+    card.className="dcard "+item.type;
+    const badgeText={up:"増額",down:"減額",removed:"取りやめ",added:"新規追加",same:"変更なし"}[item.type];
+    const deltaText=item.type==="same"?"±0":(item.delta>=0?"+":"−")+"¥"+Math.abs(item.delta).toLocaleString();
+    const oldDisp=item.old!==null?"¥"+item.old.toLocaleString():"—";
+    const newDisp=item.new!==null?"¥"+item.new.toLocaleString():"—";
+
+    card.innerHTML=`
+      <div class="dcard-head" data-idx="${idx}">
+        <span class="name">${item.name}</span>
+        <span class="badge ${item.type}">${badgeText}</span>
+        <div class="money">
+          <span>旧 ${oldDisp} → 新 ${newDisp}</span>
+          <span class="delta ${item.type==='up'||item.type==='added'?'up':item.type==='down'||item.type==='removed'?'down':''}">${deltaText}</span>
+        </div>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="dcard-body">
+        <div class="explain">
+          <div class="exp-box cust">
+            <div class="eh">お客様向け説明</div>
+            <div class="et">${genCustomer(item)}</div>
+          </div>
+          <div class="exp-box sales">
+            <div class="eh">営業向けメモ</div>
+            <div class="et">${genSales(item)}</div>
+          </div>
+        </div>
+        <div class="cmt-area">
+          <div class="clabel">コメント</div>
+          <div class="cmt-list" id="cmtlist-${idx}"></div>
+          <div class="cmt-input">
+            <input type="text" class="who-in" id="who-${idx}" placeholder="名前">
+            <input type="text" id="cmt-${idx}" placeholder="例：減額分は了承済み／要電話確認 など">
+            <button class="btn btn-navy btn-sm" data-cmt="${idx}">追加</button>
+          </div>
+        </div>
+      </div>`;
+    list.appendChild(card);
+    renderComments(idx);
+  });
+
+  // 開閉
+  list.querySelectorAll(".dcard-head").forEach(h=>{
+    h.addEventListener("click",e=>{
+      if(e.target.tagName==="INPUT"||e.target.tagName==="BUTTON")return;
+      h.parentElement.classList.toggle("open");
+    });
+  });
+  // コメント追加
+  list.querySelectorAll("[data-cmt]").forEach(b=>{
+    b.addEventListener("click",()=>{
+      const i=+b.dataset.cmt;
+      const who=document.getElementById("who-"+i).value.trim()||"無記名";
+      const txt=document.getElementById("cmt-"+i).value.trim();
+      if(!txt)return;
+      diff.items[i].comments.push({who,txt,t:new Date().toLocaleDateString("ja-JP")});
+      document.getElementById("cmt-"+i).value="";
+      renderComments(i);
+    });
+  });
+}
+
+function renderComments(idx){
+  const wrap=document.getElementById("cmtlist-"+idx);
+  if(!wrap)return;
+  const cmts=currentDiff.items[idx].comments;
+  wrap.innerHTML=cmts.map((c,ci)=>`
+    <div class="cmt">
+      <span class="who">${esc(c.who)}</span>
+      <span class="txt">${esc(c.txt)} <span style="color:#aaa;font-size:11px">(${c.t})</span></span>
+      <span class="del" data-del="${idx}-${ci}">✕</span>
+    </div>`).join("");
+  wrap.querySelectorAll("[data-del]").forEach(d=>{
+    d.addEventListener("click",()=>{
+      const [i,ci]=d.dataset.del.split("-").map(Number);
+      currentDiff.items[i].comments.splice(ci,1);
+      renderComments(i);
+    });
+  });
+}
+function esc(s){return (s+"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]));}
+
+/* ============ 比較ボタン ============ */
+document.getElementById("btnCompare").addEventListener("click",()=>{
+  const oe=parseEstimate(oldText);
+  const ne=parseEstimate(newText);
+  if(Object.keys(oe.sections).length===0||Object.keys(ne.sections).length===0){
+    alert("見積項目を読み取れませんでした。見積内訳書（集計ページ）が含まれるPDFかご確認ください。手動での調整版もご用意できます。");
+    return;
+  }
+  render(buildDiff(oe,ne));
+  window.scrollTo({top:document.getElementById("summary").offsetTop-20,behavior:"smooth"});
+});
+
+/* ============ サンプルデータ（堀江様邸 実データ） ============ */
+const DEMO={
+  title:"堀江様邸 リノベーション工事御見積",
+  totOld:7756240,totNew:7820750,
+  items:[
+    {name:"共通仮設工事",old:396000,new:396000},
+    {name:"配管設備工事",old:658200,new:610200},
+    {name:"電気工事",old:255800,new:266600},
+    {name:"照明器具",old:65500,new:65500},
+    {name:"解体工事",old:556300,new:556300},
+    {name:"大工工事",old:532500,new:641000},
+    {name:"建材",old:885040,new:852440},
+    {name:"設備工事",old:2345000,new:2345000},
+    {name:"設備工事【エコキュート】",old:449000,new:449000},
+    {name:"内装工事",old:425500,new:327150},
+    {name:"土間工事",old:537400,new:661560},
+    {name:"諸経費",old:650000,new:650000}
+  ].map(x=>{
+    let type,delta=x.new-x.old;
+    if(delta>0)type="up";else if(delta<0)type="down";else type="same";
+    return {...x,type,delta,comments:[]};
+  })
+};
+document.getElementById("btnDemo").addEventListener("click",()=>{
+  render(JSON.parse(JSON.stringify(DEMO)));
+  window.scrollTo({top:document.getElementById("summary").offsetTop-20,behavior:"smooth"});
+});
+
+/* ============ 保存（ブラウザ内） ============ */
+const STORE_KEY="vivi_mitsumori_saves";
+function loadSaves(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||"[]")}catch{return[]}}
+function persist(arr){localStorage.setItem(STORE_KEY,JSON.stringify(arr))}
+
+document.getElementById("btnSave").addEventListener("click",()=>{
+  if(!currentDiff)return;
+  document.getElementById("saveName").value=currentDiff.title||"";
+  document.getElementById("saveModal").classList.add("show");
+});
+document.getElementById("saveCancel").addEventListener("click",()=>document.getElementById("saveModal").classList.remove("show"));
+document.getElementById("saveOk").addEventListener("click",()=>{
+  const name=document.getElementById("saveName").value.trim()||"無題";
+  const saves=loadSaves();
+  saves.unshift({id:Date.now(),name,date:new Date().toLocaleString("ja-JP"),data:currentDiff});
+  persist(saves);
+  document.getElementById("saveModal").classList.remove("show");
+  alert("保存しました。「保存済みを見る」からいつでも見返せます。");
+});
+
+document.getElementById("btnShowSaved").addEventListener("click",()=>{
+  const p=document.getElementById("savedPanel");
+  p.classList.toggle("show");
+  if(p.classList.contains("show"))renderSaved();
+});
+function renderSaved(){
+  const saves=loadSaves();
+  const list=document.getElementById("savedList");
+  if(saves.length===0){list.innerHTML='<div style="color:#999;font-size:13px">保存された比較はまだありません。</div>';return;}
+  list.innerHTML=saves.map(s=>`
+    <div class="saved-item">
+      <div>
+        <div class="si-name">${esc(s.name)}</div>
+        <div class="si-meta">${s.date}</div>
+      </div>
+      <div class="si-actions">
+        <button class="btn btn-ghost btn-sm" data-open="${s.id}">開く</button>
+        <button class="btn btn-ghost btn-sm" data-rm="${s.id}">削除</button>
+      </div>
+    </div>`).join("");
+  list.querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>{
+    const s=loadSaves().find(x=>x.id==b.dataset.open);
+    if(s){render(s.data);window.scrollTo({top:document.getElementById("summary").offsetTop-20,behavior:"smooth"});}
+  }));
+  list.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm("この保存を削除しますか？"))return;
+    persist(loadSaves().filter(x=>x.id!=b.dataset.rm));renderSaved();
+  }));
+}
+
+/* ============ エクスポート：営業共有JSON ============ */
+document.getElementById("btnExportJson").addEventListener("click",()=>{
+  if(!currentDiff)return;
+  const blob=new Blob([JSON.stringify({_type:"vivi_mitsumori",data:currentDiff},null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=(currentDiff.title||"見積比較")+"_共有用.json";
+  a.click();
+});
+/* インポート */
+document.getElementById("btnImport").addEventListener("click",()=>document.getElementById("fileImport").click());
+document.getElementById("fileImport").addEventListener("change",e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const j=JSON.parse(r.result);
+      const data=j._type==="vivi_mitsumori"?j.data:j;
+      render(data);
+      window.scrollTo({top:document.getElementById("summary").offsetTop-20,behavior:"smooth"});
+    }catch{alert("ファイルを読み込めませんでした。このツールで出力した共有用ファイルか確認してください。")}
+  };
+  r.readAsText(f);
+});
+
+/* ============ エクスポート：お客様用PDF ============ */
+document.getElementById("btnExportPdf").addEventListener("click",()=>{
+  if(!currentDiff)return;
+  // 日本語フォント対応のため印刷用HTMLを別タブで開く方式
+  const win=window.open("","_blank");
+  const d=currentDiff;
+  const dTotal=Math.round(d.totNew*1.1)-Math.round(d.totOld*1.1);
+  let rows=d.items.filter(i=>i.type!=="same").map(i=>{
+    const c={up:"#c0392b",down:"#1d7a4d",removed:"#777",added:"#2766c4"}[i.type];
+    const label={up:"増額",down:"減額",removed:"取りやめ",added:"追加"}[i.type];
+    const cmts=i.comments.length?`<div style="font-size:11px;color:#666;margin-top:4px">メモ：${i.comments.map(c=>esc(c.txt)+"（"+esc(c.who)+"）").join(" / ")}</div>`:"";
+    return `<tr>
+      <td style="padding:8px;border-bottom:1px solid #eee"><b>${i.name}</b><br>
+        <span style="color:${c};font-weight:bold;font-size:12px">${label}</span>
+        ${cmts}</td>
+      <td style="padding:8px;border-bottom:1px solid #eee;font-size:13px">${genCustomer(i)}</td>
+      <td style="padding:8px;border-bottom:1px solid #eee;text-align:right;color:${c};font-weight:bold;white-space:nowrap">
+        ${i.delta>=0?"+":"−"}¥${Math.abs(i.delta).toLocaleString()}</td>
+    </tr>`;
+  }).join("");
+  win.document.write(`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8">
+    <title>${esc(d.title)} 変更点のご説明</title>
+    <style>
+      body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;color:#222;padding:30px;max-width:780px;margin:0 auto}
+      h1{font-size:20px;color:#1b2a4a;border-bottom:3px solid #f08a24;padding-bottom:8px}
+      .tot{background:#f5f6f8;border-radius:8px;padding:14px 18px;margin:16px 0;display:flex;gap:30px;flex-wrap:wrap}
+      .tot div span{display:block;font-size:12px;color:#666}
+      .tot div b{font-size:18px}
+      table{width:100%;border-collapse:collapse;margin-top:10px}
+      th{background:#1b2a4a;color:#fff;padding:8px;font-size:13px;text-align:left}
+      .note{font-size:12px;color:#666;margin-top:20px;border-top:1px solid #eee;padding-top:12px}
+      @media print{.noprint{display:none}}
+      .noprint{text-align:center;margin:20px 0}
+      .noprint button{padding:10px 24px;font-size:14px;background:#f08a24;color:#fff;border:none;border-radius:6px;cursor:pointer}
+    </style></head><body>
+    <div class="noprint"><button onclick="window.print()">PDFとして保存／印刷</button></div>
+    <h1>${esc(d.title)}<br>見積変更点のご説明</h1>
+    <div class="tot">
+      <div><span>前回お見積（税込）</span><b>¥${Math.round(d.totOld*1.1).toLocaleString()}</b></div>
+      <div><span>今回お見積（税込）</span><b>¥${Math.round(d.totNew*1.1).toLocaleString()}</b></div>
+      <div><span>差額</span><b style="color:${dTotal>=0?'#c0392b':'#1d7a4d'}">${dTotal>=0?"+":"−"}¥${Math.abs(dTotal).toLocaleString()}</b></div>
+    </div>
+    <table><thead><tr><th>工事項目</th><th>変更内容</th><th style="text-align:right">差額</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div class="note">本書は前回お渡しの見積書からの変更点をまとめたものです。ご不明な点は担当までお問い合わせください。<br>ViVi不動産株式会社</div>
+    </body></html>`);
+  win.document.close();
+});
+</script>
+</body>
+</html>
