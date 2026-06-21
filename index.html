@@ -625,7 +625,7 @@ function render(diff){
           <div class="cmt-list" id="cmtlist-${idx}"></div>
           <div class="cmt-input">
             <input type="text" class="who-in" id="who-${idx}" placeholder="記入者名">
-            <input type="text" id="cmt-${idx}" placeholder="例：グレードを上げたため増額となりました／ご要望により仕様変更 など">
+            <input type="text" id="cmt-${idx}" placeholder="例：グレードを上げたため増額となりました（Enterで追加）">
             <button class="btn btn-navy btn-sm" data-cmt="${idx}">追加</button>
           </div>
         </div>
@@ -662,14 +662,23 @@ function render(diff){
   });
   // コメント追加
   list.querySelectorAll("[data-cmt]").forEach(b=>{
-    b.addEventListener("click",()=>{
-      const i=+b.dataset.cmt;
+    const i=+b.dataset.cmt;
+    const addComment=()=>{
       const who=document.getElementById("who-"+i).value.trim()||"無記名";
       const txt=document.getElementById("cmt-"+i).value.trim();
       if(!txt)return;
       diff.items[i].comments.push({who,txt,t:new Date().toLocaleDateString("ja-JP")});
       document.getElementById("cmt-"+i).value="";
       renderComments(i);
+      document.getElementById("cmt-"+i).focus();
+    };
+    b.addEventListener("click",addComment);
+    // Enterキーでも追加（コメント欄・記入者名欄の両方）
+    document.getElementById("cmt-"+i).addEventListener("keydown",e=>{
+      if(e.key==="Enter"){e.preventDefault();addComment();}
+    });
+    document.getElementById("who-"+i).addEventListener("keydown",e=>{
+      if(e.key==="Enter"){e.preventDefault();addComment();}
     });
   });
 }
