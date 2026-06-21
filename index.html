@@ -874,6 +874,24 @@ function buildDocHtml(mode,forPrint){
     ?`<div class="overall"><div class="ov-h">全体について</div><div class="ov-b">${esc(d.overall).replace(/\n/g,"<br>")}</div></div>`:"";
   const printBtn=forPrint?`<div class="noprint"><button onclick="window.print()">PDFとして保存／印刷</button></div>`:"";
   const modeLabel=mode==="sales"?'<div style="text-align:right;font-size:11px;color:#c0392b;font-weight:bold">※社内確認用（記入者名・工程の未記入チェック表示）</div>':"";
+  // 署名欄（お客様向けのお渡し書類のみ）
+  const sign=mode==="cust"?`
+    <div class="sign">
+      <div class="s-confirm">私は、本書に記載された変更後の見積金額および工程の変更を確認し、了承しました。</div>
+      <div class="s-row">
+        <div class="s-field" style="max-width:240px">
+          <div class="s-line"></div><div class="s-cap">ご署名日</div>
+        </div>
+      </div>
+      <div class="s-row">
+        <div class="s-field">
+          <div class="s-line"></div><div class="s-cap">ご注文者（お客様）ご署名<span class="s-seal">㊞</span></div>
+        </div>
+        <div class="s-field">
+          <div class="s-line"></div><div class="s-cap">当社担当者</div>
+        </div>
+      </div>
+    </div>`:"";
   return `<style>
       .docwrap{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;color:#222;max-width:780px;margin:0 auto}
       .docwrap h1{font-size:20px;color:#1b2a4a;border-bottom:3px solid #f08a24;padding-bottom:8px}
@@ -890,6 +908,13 @@ function buildDocHtml(mode,forPrint){
       .docwrap .ov-h{font-size:13px;font-weight:bold;color:#a8780a;margin-bottom:6px}
       .docwrap .ov-b{font-size:13px;line-height:1.8}
       .docwrap .note{font-size:12px;color:#666;margin-top:20px;border-top:1px solid #eee;padding-top:12px}
+      .docwrap .sign{margin-top:26px;border:1.5px solid #1b2a4a;border-radius:8px;padding:18px 22px;page-break-inside:avoid}
+      .docwrap .sign .s-confirm{font-size:14px;font-weight:bold;color:#1b2a4a;margin-bottom:6px;line-height:1.8}
+      .docwrap .sign .s-row{display:flex;gap:36px;flex-wrap:wrap;margin-top:26px}
+      .docwrap .sign .s-field{flex:1;min-width:200px}
+      .docwrap .sign .s-line{border-bottom:1px solid #333;height:30px}
+      .docwrap .sign .s-cap{font-size:12px;color:#666;margin-top:5px}
+      .docwrap .sign .s-seal{font-size:11px;color:#999;margin-left:3px}
       @media print{.noprint{display:none}}
       .noprint{text-align:center;margin:0 0 20px}
       .noprint button{padding:10px 24px;font-size:14px;background:#f08a24;color:#fff;border:none;border-radius:6px;cursor:pointer}
@@ -906,6 +931,7 @@ function buildDocHtml(mode,forPrint){
     <tbody>${rows}</tbody></table>
     ${overall}
     <div class="note">本書は前回お渡しの見積書からの変更点をまとめたものです。ご不明な点は担当までお問い合わせください。<br>ViVi不動産株式会社</div>
+    ${sign}
     </div>`;
 }
 
