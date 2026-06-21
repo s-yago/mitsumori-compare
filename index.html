@@ -342,8 +342,8 @@ footer{text-align:center;padding:24px;color:var(--ink-soft);font-size:12px}
     <div class="preview-box">
       <div class="preview-head">
         <div class="preview-toggle">
-          <button class="ptab active" id="ptabCust">お客様向け（工程・金額のみ）</button>
-          <button class="ptab" id="ptabSales">社内向け（工程変更・コメント入り）</button>
+          <button class="ptab active" id="ptabCust">お客様向け（お渡し用）</button>
+          <button class="ptab" id="ptabSales">社内確認用（記入者名・未記入チェック）</button>
         </div>
         <button class="preview-close" id="previewClose">✕ 閉じる</button>
       </div>
@@ -621,11 +621,11 @@ function render(diff){
           </div>
         </div>
         <div class="cmt-area">
-          <div class="clabel">コメント</div>
+          <div class="clabel">補足説明（お客様にお伝えする内容・書類にも記載されます）</div>
           <div class="cmt-list" id="cmtlist-${idx}"></div>
           <div class="cmt-input">
-            <input type="text" class="who-in" id="who-${idx}" placeholder="名前">
-            <input type="text" id="cmt-${idx}" placeholder="例：減額分は了承済み／要電話確認 など">
+            <input type="text" class="who-in" id="who-${idx}" placeholder="記入者名">
+            <input type="text" id="cmt-${idx}" placeholder="例：グレードを上げたため増額となりました／ご要望により仕様変更 など">
             <button class="btn btn-navy btn-sm" data-cmt="${idx}">追加</button>
           </div>
         </div>
@@ -849,9 +849,10 @@ function buildDocHtml(mode,forPrint){
     }else if(mode==="sales"){
       proc=`<div style="font-size:12px;color:#c0392b;margin-top:4px">⏱ 工程影響：未記入（要確認）</div>`;
     }
-    // コメントは社内向けのみ
-    const cmts=(mode==="sales"&&i.comments.length)
-      ?`<div style="font-size:11px;color:#666;margin-top:4px;background:#f5f6f8;padding:6px 8px;border-radius:5px">メモ：${i.comments.map(c=>esc(c.txt)+"（"+esc(c.who)+"）").join(" / ")}</div>`:"";
+    // 補足説明（お客様への口頭補足用）。両モードに表示。社内向けは記入者名も出す
+    const cmts=i.comments.length
+      ?`<div style="font-size:12px;color:#1b2a4a;margin-top:5px;background:#fef0df;padding:7px 10px;border-radius:5px;border-left:3px solid #f08a24">
+          <b style="font-size:10.5px;color:#c2710f">補足説明</b><br>${i.comments.map(c=>esc(c.txt)+(mode==="sales"?"（"+esc(c.who)+"）":"")).join("<br>")}</div>`:"";
     return `<tr>
       <td style="padding:9px;border-bottom:1px solid #eee;vertical-align:top"><b>${esc(i.name)}</b>
         <div style="color:${c};font-weight:bold;font-size:12px">${label}</div>${proc}${cmts}</td>
@@ -863,7 +864,7 @@ function buildDocHtml(mode,forPrint){
   const overall=(d.overall&&d.overall.trim())
     ?`<div class="overall"><div class="ov-h">全体について</div><div class="ov-b">${esc(d.overall).replace(/\n/g,"<br>")}</div></div>`:"";
   const printBtn=forPrint?`<div class="noprint"><button onclick="window.print()">PDFとして保存／印刷</button></div>`:"";
-  const modeLabel=mode==="sales"?'<div style="text-align:right;font-size:11px;color:#c0392b;font-weight:bold">※社内確認用（コメント・工程メモ入り）</div>':"";
+  const modeLabel=mode==="sales"?'<div style="text-align:right;font-size:11px;color:#c0392b;font-weight:bold">※社内確認用（記入者名・工程の未記入チェック表示）</div>':"";
   return `<style>
       .docwrap{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;color:#222;max-width:780px;margin:0 auto}
       .docwrap h1{font-size:20px;color:#1b2a4a;border-bottom:3px solid #f08a24;padding-bottom:8px}
