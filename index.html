@@ -855,8 +855,8 @@ function buildDocHtml(mode,forPrint){
           <b style="font-size:10.5px;color:#c2710f">補足説明</b><br>${i.comments.map(c=>esc(c.txt)+(mode==="sales"?"（"+esc(c.who)+"）":"")).join("<br>")}</div>`:"";
     return `<tr>
       <td style="padding:9px;border-bottom:1px solid #eee;vertical-align:top"><b>${esc(i.name)}</b>
-        <div style="color:${c};font-weight:bold;font-size:12px">${label}</div>${proc}${cmts}</td>
-      <td style="padding:9px;border-bottom:1px solid #eee;font-size:13px;vertical-align:top">${genCustomer(i)}</td>
+        <div style="color:${c};font-weight:bold;font-size:12px">${label}</div></td>
+      <td style="padding:9px;border-bottom:1px solid #eee;font-size:13px;vertical-align:top">${genCustomer(i)}${proc}${cmts}</td>
       <td style="padding:9px;border-bottom:1px solid #eee;text-align:right;color:${c};font-weight:bold;white-space:nowrap;vertical-align:top">
         ${i.delta>=0?"+":"−"}¥${Math.abs(i.delta).toLocaleString()}</td>
     </tr>`;
@@ -871,7 +871,11 @@ function buildDocHtml(mode,forPrint){
       .docwrap .tot{background:#f5f6f8;border-radius:8px;padding:14px 18px;margin:16px 0;display:flex;gap:30px;flex-wrap:wrap}
       .docwrap .tot div span{display:block;font-size:12px;color:#666}
       .docwrap .tot div b{font-size:18px}
-      .docwrap table{width:100%;border-collapse:collapse;margin-top:10px}
+      .docwrap table{width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed}
+      .docwrap col.c-item{width:18%}
+      .docwrap col.c-body{width:67%}
+      .docwrap col.c-amt{width:15%}
+      .docwrap td{word-break:break-word}
       .docwrap th{background:#1b2a4a;color:#fff;padding:8px;font-size:13px;text-align:left}
       .docwrap .overall{margin-top:18px;background:#fff8ec;border:1px solid #f0d488;border-radius:8px;padding:13px 16px}
       .docwrap .ov-h{font-size:13px;font-weight:bold;color:#a8780a;margin-bottom:6px}
@@ -889,7 +893,7 @@ function buildDocHtml(mode,forPrint){
       <div><span>今回お見積（税込）</span><b>¥${Math.round(d.totNew*1.1).toLocaleString()}</b></div>
       <div><span>差額</span><b style="color:${dTotal>=0?'#c0392b':'#1d7a4d'}">${dTotal>=0?"+":"−"}¥${Math.abs(dTotal).toLocaleString()}</b></div>
     </div>
-    <table><thead><tr><th>工事項目</th><th>変更内容</th><th style="text-align:right">差額</th></tr></thead>
+    <table><colgroup><col class="c-item"><col class="c-body"><col class="c-amt"></colgroup><thead><tr><th>工事項目</th><th>変更内容</th><th style="text-align:right">差額</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${overall}
     <div class="note">本書は前回お渡しの見積書からの変更点をまとめたものです。ご不明な点は担当までお問い合わせください。<br>ViVi不動産株式会社</div>
