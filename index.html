@@ -253,6 +253,7 @@ footer{text-align:center;padding:24px;color:var(--ink-soft);font-size:12px}
     <button class="btn btn-ghost" id="btnImport">共有ファイルを読込</button>
     <input type="file" accept=".json" hidden id="fileImport">
     <button class="btn btn-ghost" id="btnShowSaved">保存済みを見る</button>
+    <button class="btn btn-ghost" id="btnReset" style="display:none">最初に戻す（新規比較）</button>
   </div>
 
   <div class="saved-panel" id="savedPanel">
@@ -479,11 +480,11 @@ function genCustomer(item){
   const amt=Math.abs(item.delta).toLocaleString();
   switch(item.type){
     case "up":
-      return `「${item.name}」の内容を見直し、${amt}円ぶん追加となりました。${note}より良い仕上がりのための変更です。詳しい内容は担当よりご説明いたします。`;
+      return `「${item.name}」の内容を見直し、${amt}円分追加となりました。${note}より良い仕上がりのための変更です。詳しい内容は担当よりご説明いたします。`;
     case "down":
       return `「${item.name}」を見直し、${amt}円お安くなりました。${note}ご負担が軽くなる変更です。`;
     case "removed":
-      return `「${item.name}」は今回の工事から取りやめとなり、${amt}円ぶん減額しました。${note}`;
+      return `「${item.name}」は今回の工事から取りやめとなり、${amt}円分減額しました。${note}`;
     case "added":
       return `「${item.name}」を新たに追加し、${amt}円となりました。${note}ご要望をふまえた追加項目です。`;
     default:return `「${item.name}」は前回から変更ありません。`;
@@ -510,6 +511,7 @@ function render(diff){
   document.getElementById("summary").classList.add("show");
   document.getElementById("legend").style.display="flex";
   document.getElementById("exportBar").classList.add("show");
+  document.getElementById("btnReset").style.display="inline-block";
   ["step1","step2","step3","step4"].forEach(s=>document.getElementById(s).classList.add("done"));
 
   document.getElementById("summaryTitle").textContent=diff.title;
@@ -664,6 +666,27 @@ document.getElementById("saveOk").addEventListener("click",()=>{
   persist(saves);
   document.getElementById("saveModal").classList.remove("show");
   alert("保存しました。「保存済みを見る」からいつでも見返せます。");
+});
+
+/* ============ 最初に戻す ============ */
+document.getElementById("btnReset").addEventListener("click",()=>{
+  oldText="";newText="";oldFileName="";newFileName="";currentDiff=null;
+  document.getElementById("fileOld").value="";
+  document.getElementById("fileNew").value="";
+  document.getElementById("fnameOld").textContent="";
+  document.getElementById("fnameNew").textContent="";
+  document.getElementById("dropOld").classList.remove("loaded");
+  document.getElementById("dropNew").classList.remove("loaded");
+  document.getElementById("btnCompare").disabled=true;
+  document.getElementById("summary").classList.remove("show");
+  document.getElementById("legend").style.display="none";
+  document.getElementById("exportBar").classList.remove("show");
+  document.getElementById("diffList").innerHTML="";
+  document.getElementById("emptyState").style.display="block";
+  document.getElementById("btnReset").style.display="none";
+  document.getElementById("savedPanel").classList.remove("show");
+  ["step1","step2","step3","step4"].forEach(s=>document.getElementById(s).classList.remove("done"));
+  window.scrollTo({top:0,behavior:"smooth"});
 });
 
 document.getElementById("btnShowSaved").addEventListener("click",()=>{
